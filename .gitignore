@@ -1,0 +1,16 @@
+# Runtime data (DB, settings, products, logs) — never commit
+data/
+tests/_tmp_data/
+
+# Portable build artifacts
+build/staging/
+build/*.zip
+build/python-embed.zip
+build/get-pip.py
+python/
+
+# Dev
+.venv-dev/
+.venv/
+__pycache__/
+*.pyc
