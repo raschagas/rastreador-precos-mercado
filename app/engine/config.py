@@ -28,7 +28,8 @@ SUPERADEGA_SITE_URL = "https://www.atacadistasuperadega.com.br"
 DEFAULT_SETTINGS: dict = {
     # secrets / regional
     "telegram_token": "",
-    "telegram_chat_id": "",
+    "telegram_chat_id": "-1002348762774",
+    "telegram_topic_id": "4879",
     "brasilia_cep": "",          # blank by default; user enters their CEP
     # scheduling / notifications
     "scan_interval_hours": 6,

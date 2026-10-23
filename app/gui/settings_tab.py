@@ -5,7 +5,7 @@ import asyncio
 
 from PySide6.QtWidgets import (
     QCheckBox, QDoubleSpinBox, QFormLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLineEdit, QMessageBox, QPushButton, QSpinBox, QVBoxLayout, QWidget,
+    QLineEdit, QComboBox, QMessageBox, QPushButton, QSpinBox, QVBoxLayout, QWidget,
 )
 
 from engine import config, notify
@@ -19,12 +19,17 @@ class SettingsTab(QWidget):
         # — Telegram / regional —
         self.token = QLineEdit(); self.token.setEchoMode(QLineEdit.Password)
         self.token.setPlaceholderText("123456:ABC-... (opcional)")
-        self.chat_id = QLineEdit(); self.chat_id.setPlaceholderText("ex.: 123456789")
+        self.chat_id = QLineEdit("-1002348762774"); self.chat_id.setReadOnly(True)
+        self.topic = QComboBox()
+        self.topic.addItem("Selecione o tópico", "")
+        self.topic.addItem("Mercado", "4879")
+        self.topic.addItem("Pessoal", "14867")
         self.cep = QLineEdit(); self.cep.setPlaceholderText("ex.: 71687206 (seu CEP no DF)")
         tg_box = QGroupBox("Telegram e região")
         tgf = QFormLayout(tg_box)
         tgf.addRow("Bot token", self.token)
-        tgf.addRow("Chat ID", self.chat_id)
+        tgf.addRow("Grupo Notificações", self.chat_id)
+        tgf.addRow("Tópico", self.topic)
         tgf.addRow("CEP (Brasília/DF)", self.cep)
 
         # — Schedule —
@@ -80,7 +85,8 @@ class SettingsTab(QWidget):
     def load(self) -> None:
         s = config.load_settings()
         self.token.setText(str(s.get("telegram_token", "")))
-        self.chat_id.setText(str(s.get("telegram_chat_id", "")))
+        self.chat_id.setText("-1002348762774")
+        self.topic.setCurrentIndex(max(0, self.topic.findData(str(s.get("telegram_topic_id", "")))))
         self.cep.setText(str(s.get("brasilia_cep", "")))
         self.interval.setValue(int(s.get("scan_interval_hours", 6)))
         self.notif_on.setChecked(bool(s.get("notifications_enabled", True)))
@@ -100,7 +106,8 @@ class SettingsTab(QWidget):
     def _collect(self) -> dict:
         return {
             "telegram_token": self.token.text().strip(),
-            "telegram_chat_id": self.chat_id.text().strip(),
+            "telegram_chat_id": "-1002348762774",
+            "telegram_topic_id": self.topic.currentData(),
             "brasilia_cep": self.cep.text().strip(),
             "scan_interval_hours": self.interval.value(),
             "notifications_enabled": self.notif_on.isChecked(),
