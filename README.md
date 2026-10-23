@@ -76,3 +76,10 @@ Baixa o Python embutido, habilita o pip, empacota `app/` + `Iniciar.bat` e gera
 ## Licença
 
 MIT.
+
+## Telegram: grupo e tópico
+
+Após sincronizar, abra Configurações, selecione o tópico aprovado no grupo
+Notificações e salve. Configurações antigas com chat privado são recusadas até
+essa atualização. O envio exige tópico explícito; não há fallback para General.
+Os testes de roteamento usam HTTP simulado e não enviam mensagens reais.

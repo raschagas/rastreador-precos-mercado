@@ -57,23 +57,31 @@ def _listing_lines(listing: dict, kind: str) -> tuple[str, str]:
     return tg, toast
 
 
-async def _send_telegram(text: str, settings: dict) -> None:
+async def _send_telegram(text: str, settings: dict) -> bool:
     token = (settings.get("telegram_token") or "").strip()
     chat_id = str(settings.get("telegram_chat_id") or "").strip()
-    if not token or not chat_id:
-        log.info("Telegram not configured; skipping send")
-        return
+    topic = str(settings.get("telegram_topic_id") or "").strip()
+    if chat_id != "-1002348762774" or topic not in {"4879", "14867"}:
+        log.warning("Telegram route rejected: choose a registered Notificações topic")
+        return False
+    if not token:
+        log.info("Telegram token not configured; skipping send")
+        return False
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(
                 f"https://api.telegram.org/bot{token}/sendMessage",
-                json={"chat_id": chat_id, "text": text, "parse_mode": "HTML",
+                json={"chat_id": chat_id, "message_thread_id": int(topic),
+                      "text": text, "parse_mode": "HTML",
                       "disable_web_page_preview": True},
             )
-            if resp.status_code != 200:
-                log.warning("Telegram send failed %d: %s", resp.status_code, resp.text[:200])
-    except Exception as e:
-        log.error("Telegram send error: %s", e)
+            body = resp.json()
+            return (resp.status_code == 200 and body.get("ok") is True
+                    and type(body.get("result", {}).get("message_id")) is int
+                    and body["result"]["message_id"] > 0)
+    except Exception:
+        log.error("Telegram delivery failed; no alternate destination attempted")
+        return False
 
 
 def _send_toast(title: str, message: str) -> None:
@@ -110,12 +118,12 @@ async def dispatch(result, settings: dict | None = None) -> int:
     sent = 0
     for listing, kind in events:
         tg, toast = _listing_lines(listing, kind)
-        if tg_on:
-            await _send_telegram(tg, settings)
+        telegram_sent = await _send_telegram(tg, settings) if tg_on else False
         if toast_on:
             title, _, body = toast.partition("\n")
             _send_toast(title, body or title)
-        sent += 1
+        if telegram_sent or toast_on:
+            sent += 1
     return sent
 
 
@@ -123,10 +131,11 @@ async def send_test(settings: dict) -> str:
     """Fire a test notification through the enabled channels. Returns a status."""
     msgs = []
     if settings.get("telegram_enabled", True):
-        await _send_telegram("✅ <b>Rastreador de Preços</b>\nTeste de notificação Telegram.",
-                             settings)
-        msgs.append("Telegram")
+        delivered = await _send_telegram("✅ <b>Rastreador de Preços</b>\nTeste de notificação Telegram.",
+                                         settings)
+        if delivered:
+            msgs.append("Telegram")
     if settings.get("toast_enabled", True):
         _send_toast("Rastreador de Preços", "Teste de notificação (toast).")
         msgs.append("Toast")
-    return "Enviado: " + ", ".join(msgs) if msgs else "Nenhum canal habilitado"
+    return "Enviado: " + ", ".join(msgs) if msgs else "Nenhuma notificação confirmada; confira a configuração"
